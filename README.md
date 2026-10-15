@@ -1,5 +1,34 @@
 # Huntly
 
+<p align="center">
+  <strong>LOCAL INTELLIGENCE · CONTROLLED OUTREACH · ZERO BLACK BOXES</strong>
+</p>
+
+<p align="center">
+  <a href="https://github.com/atharhive/Huntly/actions/workflows/tests.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/atharhive/Huntly/tests.yml?branch=main&style=for-the-badge&label=CI" alt="CI status">
+  </a>
+  <a href="https://github.com/atharhive/Huntly">
+    <img src="https://img.shields.io/github/stars/atharhive/Huntly?style=for-the-badge&color=00d9ff&label=STARS" alt="GitHub stars">
+  </a>
+  <img src="https://img.shields.io/badge/status-beta-8b5cf6?style=for-the-badge" alt="Beta status">
+  <img src="https://img.shields.io/badge/python-3.11%2B-3776ab?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11 or newer">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Claude-native-111827?style=flat-square&logo=anthropic&logoColor=white" alt="Claude native">
+  <img src="https://img.shields.io/badge/Codex-opt--in-111827?style=flat-square&logo=openai&logoColor=white" alt="Codex opt-in">
+  <img src="https://img.shields.io/badge/FastAPI-dashboard-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI dashboard">
+  <img src="https://img.shields.io/badge/SQLite-state-003b57?style=flat-square&logo=sqlite&logoColor=white" alt="SQLite state">
+  <img src="https://img.shields.io/badge/Playwright-browser-2ead33?style=flat-square&logo=playwright&logoColor=white" alt="Playwright browser automation">
+  <img src="https://img.shields.io/badge/Docker-ready-2496ed?style=flat-square&logo=docker&logoColor=white" alt="Docker ready">
+  <img src="https://img.shields.io/badge/pytest-tested-0a9edc?style=flat-square&logo=pytest&logoColor=white" alt="Tested with pytest">
+</p>
+
+<p align="center">
+  <code>DISCOVER</code> → <code>PROFILE</code> → <code>QUALIFY</code> → <code>WRITE</code> → <code>REVIEW</code> → <code>RESPOND</code>
+</p>
+
 Huntly is a local sales-workflow engine for teams that want research, message
 drafting, delivery, and reply handling in one inspectable process.
 
