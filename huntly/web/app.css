@@ -583,3 +583,302 @@ details[open] summary::before { content: '– '; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
 }
+
+/* ── Huntly 2.0 art direction ─────────────────────────────────
+   A focused operator workspace: ink, acid-lime, and warm paper. The
+   existing DOM stays deliberately intact so the dashboard's API-driven
+   interactions remain unchanged.
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  --r-sm: 8px;
+  --r-md: 16px;
+  --gut: 38px;
+  --bg: #10131b;
+  --panel: #171c27;
+  --panel-raised: #202838;
+  --border: #293346;
+  --border-strong: #3b4960;
+  --rule: #8aff6c;
+  --text: #f4f6f0;
+  --text-2: #a8b2c3;
+  --text-3: #68758b;
+  --ink: #b4ff75;
+  --ink-contrast: #10131b;
+  --ink-soft: rgba(180, 255, 117, .12);
+  --shadow: 0 22px 70px rgba(2, 6, 18, .35);
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  --bg: #f4f5ef;
+  --panel: #ffffff;
+  --panel-raised: #e9eee4;
+  --border: #dbe2d7;
+  --border-strong: #bac8b8;
+  --rule: #4d8c3b;
+  --text: #18211b;
+  --text-2: #526158;
+  --text-3: #849188;
+  --ink: #3b8c35;
+  --ink-contrast: #ffffff;
+  --ink-soft: rgba(59, 140, 53, .1);
+  --shadow: 0 20px 60px rgba(42, 72, 46, .12);
+  color-scheme: light;
+}
+
+/* Match the specificity of the original auto-dark token block. */
+:root:not([data-theme='light']) {
+  --bg: #10131b;
+  --panel: #171c27;
+  --panel-raised: #202838;
+  --border: #293346;
+  --border-strong: #3b4960;
+  --rule: #8aff6c;
+  --text: #f4f6f0;
+  --text-2: #a8b2c3;
+  --text-3: #68758b;
+  --ink: #b4ff75;
+  --ink-contrast: #10131b;
+  --ink-soft: rgba(180, 255, 117, .12);
+  --shadow: 0 22px 70px rgba(2, 6, 18, .35);
+  color-scheme: dark;
+}
+
+body {
+  background:
+    radial-gradient(circle at 75% -10%, rgba(111, 92, 255, .15), transparent 30rem),
+    radial-gradient(circle at 5% 100%, rgba(180, 255, 117, .055), transparent 28rem),
+    var(--bg);
+  font-size: 14px;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: .18;
+  background-image: radial-gradient(rgba(255,255,255,.14) .6px, transparent .6px);
+  background-size: 5px 5px;
+  mix-blend-mode: overlay;
+  z-index: -1;
+}
+
+header {
+  height: 78px;
+  padding: 0 42px;
+  margin-left: 244px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(18px);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.brand { gap: 12px; }
+.brand .mark {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: var(--ink);
+  color: var(--ink-contrast);
+  font-family: var(--sans);
+  font-size: 18px;
+  font-weight: 700;
+  box-shadow: 0 0 0 5px var(--ink-soft);
+}
+.brand h1 {
+  font-family: var(--sans);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.brand .tagline {
+  font-family: var(--sans);
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.header-controls { gap: 12px; }
+.huntly-status {
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel);
+}
+.status-dot { width: 7px; height: 7px; }
+.status-dot.running { box-shadow: 0 0 0 4px rgba(180,255,117,.14); }
+.icon-btn, .refresh-btn {
+  border-radius: 9px;
+  border-color: var(--border);
+  padding: 8px 12px;
+}
+.refresh-btn {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--ink-contrast);
+  font-weight: 650;
+}
+
+nav {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 244px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding: 106px 18px 24px;
+  border-right: 1px solid var(--border);
+  border-bottom: 0;
+  background: rgba(15, 19, 28, .88);
+  z-index: 25;
+}
+:root[data-theme='light'] nav { background: rgba(244,245,239,.92); }
+nav::before {
+  content: 'WORKSPACE';
+  position: absolute;
+  top: 88px;
+  left: 22px;
+  color: var(--text-3);
+  font: 600 10px var(--mono);
+  letter-spacing: .16em;
+}
+nav button {
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+  margin: 0;
+  padding: 0 13px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 550;
+  text-align: left;
+}
+nav button:hover {
+  color: var(--text);
+  background: var(--panel);
+}
+nav button.active {
+  color: var(--ink);
+  background: var(--ink-soft);
+  border-color: rgba(180,255,117,.22);
+  box-shadow: inset 3px 0 0 var(--ink);
+}
+.nav-count {
+  margin-left: auto;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--ink-contrast);
+  padding: 2px 7px;
+}
+
+main {
+  max-width: 1480px;
+  margin: 0 0 0 244px;
+  padding: 46px 52px 110px;
+}
+.section-head { margin-bottom: 32px; }
+.section-head h2 {
+  font-family: var(--sans);
+  font-size: clamp(29px, 3vw, 44px);
+  font-weight: 700;
+  letter-spacing: -.045em;
+}
+.section-head p { color: var(--text-2); margin-top: 9px; }
+.subhead {
+  color: var(--ink);
+  border-bottom-color: var(--border);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.today-grid { grid-template-columns: minmax(0, 1fr) 330px; gap: 52px; }
+.today-rail { top: 105px; }
+.queue { border-top: 0; }
+.queue-item {
+  margin-bottom: 10px;
+  padding: 19px 20px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: linear-gradient(115deg, var(--panel), color-mix(in srgb, var(--panel) 76%, var(--panel-raised)));
+  box-shadow: 0 12px 35px rgba(0,0,0,.12);
+}
+.queue-item::before { width: 4px; border-radius: 9px; margin-left: -5px; }
+.queue-item .qtitle { font-size: 15px; font-weight: 650; }
+.queue-item .btn { border-radius: 8px; }
+.figures { border-top: 1px solid var(--border-strong); }
+.figure { padding: 13px 0; border-bottom-color: var(--border); }
+.figure .v { color: var(--ink); font-size: 18px; font-weight: 600; }
+.figure .v.zero { color: var(--text-3); }
+
+.card, .table-card, .desk-list, .desk-pane, .campaign-card, .convo-card {
+  border-color: var(--border);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--panel) 92%, transparent);
+  box-shadow: 0 14px 40px rgba(0,0,0,.12);
+}
+.card { padding: 26px 28px; }
+.card h2 { font-size: 14px; }
+.btn {
+  border-radius: 9px;
+  padding: 9px 16px;
+  font-weight: 600;
+  transition: transform .2s cubic-bezier(.2,.8,.2,1), box-shadow .2s, background .2s;
+}
+.btn:hover:not(:disabled) { transform: translateY(-2px); }
+.btn-primary {
+  background: var(--ink);
+  color: var(--ink-contrast);
+  box-shadow: 0 8px 20px rgba(180,255,117,.13);
+}
+.btn-primary:hover:not(:disabled) { opacity: 1; box-shadow: 0 10px 28px rgba(180,255,117,.24); }
+.btn-secondary { background: var(--panel); border-color: var(--border-strong); }
+.btn-danger { border-color: var(--s-bad); border-radius: 9px; }
+.form-input {
+  padding: 11px 13px;
+  border-radius: 9px;
+  background: var(--bg);
+  border-color: var(--border);
+}
+.form-input:focus { border-color: var(--ink); box-shadow: 0 0 0 3px var(--ink-soft); }
+.table-card { overflow: auto; }
+th { background: var(--panel); color: var(--ink); letter-spacing: .08em; text-transform: uppercase; }
+tbody tr:hover td { background: var(--panel-raised); }
+.desk-pane { padding: 34px 38px; }
+.desk-pane .subject { font-family: var(--sans); font-size: 28px; font-weight: 650; letter-spacing: -.04em; }
+.desk-pane .body { line-height: 1.85; }
+.empty { border-color: var(--border-strong); background: var(--panel); }
+.toast { border-radius: 10px; }
+
+@media (max-width: 900px) {
+  header { margin-left: 0; padding: 0 var(--gut); }
+  nav {
+    position: sticky;
+    inset: auto;
+    width: auto;
+    height: auto;
+    flex-direction: row;
+    padding: 8px var(--gut);
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  nav::before { display: none; }
+  nav button { flex: 0 0 auto; min-height: 38px; }
+  main { margin-left: 0; padding: 34px var(--gut) 80px; }
+}
+
+@media (max-width: 560px) {
+  .header-controls .huntly-status { display: none; }
+  .header-controls { gap: 6px; }
+  .today-grid { gap: 28px; }
+  .card { padding: 20px; }
+  .desk-pane { padding: 24px 20px; }
+}
