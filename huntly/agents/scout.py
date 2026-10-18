@@ -148,11 +148,14 @@ class Scout:
         strategies.append(("known_companies", self._prospect_via_known_companies))
         if self.config.channels.linkedin.enabled and self.env.linkedin_email:
             strategies.append(("linkedin", self._prospect_via_linkedin))
+        # Company discovery must run before profile search: both use the same
+        # per-cycle search budget, and a profile sweep can otherwise consume
+        # all queries before any new business is found.
+        strategies.append(("company_discovery", self._prospect_via_company_discovery))
         # Job boards first: hiring is the strongest intent signal, and the
         # strategy self-skips when python-jobspy isn't installed.
         strategies.append(("hiring_boards", self._prospect_via_hiring_boards))
         strategies.append(("profile_search", self._prospect_via_profile_search))
-        strategies.append(("company_discovery", self._prospect_via_company_discovery))
 
         for name, strategy in strategies:
             try:
@@ -795,13 +798,40 @@ class Scout:
                 if not parsed:
                     continue
 
+                # A profile hit without a company/domain cannot produce a
+                # deliverable address. Keep it out of the real prospect pool;
+                # company discovery and public business inboxes are the
+                # source of truth for outreach.
+                company_name = parsed.get("company", "")
+                domain = await self._guess_domain(company_name) if company_name else ""
+                email, email_status = ("", "")
+                company_id = ""
+                if domain:
+                    company_id = await self._ensure_company(
+                        name=company_name,
+                        domain=domain,
+                        industry=industry,
+                        source="linkedin_web_search",
+                        source_url=url,
+                    )
+                    email, email_status = await self._resolve_email(
+                        parsed["first_name"], parsed["last_name"], domain
+                    )
+                if not email or email_status not in {"verified", "risky"}:
+                    continue
+
                 prospect = Prospect(
                     first_name=parsed.get("first_name", ""),
                     last_name=parsed.get("last_name", ""),
+                    email=email,
+                    email_status=email_status,
+                    email_verified=email_status == "verified",
                     linkedin_url=url,
                     title=title,
                     seniority=self._infer_seniority(title),
                     industry=industry,
+                    company=company_name,
+                    company_id=company_id,
                     source="web_search",
                     source_url=url,
                 )
@@ -1981,10 +2011,16 @@ Respond ONLY with the JSON array."""
                 r"^\s*([A-Z][a-z]+)\s+([A-Z][a-z'\-]+)", snippet.strip()
             )
             if name_match:
-                return {
+                parsed = {
                     "first_name": name_match.group(1),
                     "last_name": name_match.group(2),
                 }
+                company_match = re.search(
+                    r"\b(?:at|@)\s+([^|•·\n]+)", snippet, re.IGNORECASE
+                )
+                if company_match:
+                    parsed["company"] = company_match.group(1).strip(" -–—")
+                return parsed
 
         # 2) Fall back to the URL slug.
         match = re.search(r"/in/([\w][\w-]+)", url)
@@ -2000,6 +2036,7 @@ Respond ONLY with the JSON array."""
                 return {
                     "first_name": parts[0].title(),
                     "last_name": " ".join(p.title() for p in parts[1:]),
+                    "company": "",
                 }
 
         return None
