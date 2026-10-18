@@ -119,6 +119,11 @@ def _ensure_importable(project_root: str):
 
 def cmd_setup(args):
     """Run the interactive setup wizard."""
+    if not getattr(args, "terminal", False):
+        from huntly.dashboard import start_dashboard
+
+        start_dashboard(open_browser=True)
+        return
     from huntly.setup import run_setup
 
     asyncio.run(run_setup())
@@ -649,6 +654,10 @@ def main():
 
     # huntly setup
     sub = subparsers.add_parser("setup", help="Run the interactive setup wizard")
+    sub.add_argument(
+        "--terminal", action="store_true",
+        help="Use the legacy terminal setup wizard instead of the browser",
+    )
     sub.set_defaults(func=cmd_setup)
 
     # huntly run

@@ -5,8 +5,11 @@ import json
 import logging
 import os
 import signal
+import shutil
 import subprocess
 import sys
+import threading
+import webbrowser
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -1328,10 +1331,168 @@ async def dashboard():
     return (WEB_DIR / "index.html").read_text(encoding="utf-8")
 
 
-def start_dashboard(host: str = "127.0.0.1", port: int = 5555):
+@app.get("/setup", response_class=HTMLResponse)
+async def setup_page():
+    return (WEB_DIR / "setup.html").read_text(encoding="utf-8")
+
+
+def _setup_config_path() -> Path:
+    """Use a local override so onboarding never edits the tracked template."""
+    return PROJECT_ROOT / "huntly.local.yaml"
+
+
+def _merge_setup_config(base: dict, updates: dict) -> dict:
+    """Merge setup sections without discarding earlier wizard steps."""
+    merged = dict(base)
+    for key, value in updates.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            section = dict(merged[key])
+            section.update(value)
+            merged[key] = section
+        else:
+            merged[key] = value
+    return merged
+
+
+@app.get("/api/setup/config")
+async def get_setup_config():
+    path = _setup_config_path()
+    if not path.exists():
+        path = _resolve_config_file()
+    try:
+        config = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError) as e:
+        return JSONResponse({"success": False, "message": f"Could not read configuration: {e}"}, status_code=500)
+    return {
+        "success": True,
+        "config": {
+            "persona": config.get("persona", {}),
+            "product": config.get("product", {}),
+            "icp": config.get("icp", {}),
+            "channels": config.get("channels", {}),
+            "usage": config.get("usage", {}),
+        },
+    }
+
+
+@app.post("/api/setup/config")
+async def save_setup_config(request: Request):
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"success": False, "message": "Invalid request body."}, status_code=400)
+    if not isinstance(body, dict):
+        return JSONResponse({"success": False, "message": "Invalid request body."}, status_code=400)
+
+    # Accept only the setup surface; credentials remain in .env.
+    allowed = {"persona", "product", "icp", "channels", "usage"}
+    updates = {key: body[key] for key in allowed if key in body}
+    if not updates:
+        return JSONResponse({"success": False, "message": "No configuration supplied."}, status_code=400)
+    try:
+        path = _setup_config_path()
+        existing = {}
+        if path.exists():
+            existing = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        else:
+            template = _resolve_config_file()
+            if template.exists():
+                existing = yaml.safe_load(template.read_text(encoding="utf-8")) or {}
+        config = _merge_setup_config(existing, updates)
+        path.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
+    except (OSError, yaml.YAMLError) as e:
+        logger.warning("Failed to write setup config: %s", e)
+        return JSONResponse({"success": False, "message": "Could not save local configuration."}, status_code=500)
+    return {"success": True, "path": path.name}
+
+
+_codex_login_process: subprocess.Popen | None = None
+_setup_training_task: asyncio.Task | None = None
+_setup_training_status: dict = {"state": "idle", "message": ""}
+
+
+@app.get("/api/setup/brain")
+async def setup_brain_status():
+    from huntly.codex import check_cli_version, check_native_auth, CodexError
+
+    result = {"provider": "codex", "cli": False, "version": "", "authenticated": False, "message": ""}
+    try:
+        result["version"] = check_cli_version()
+        result["cli"] = True
+    except CodexError as e:
+        result["message"] = str(e)
+        return result
+    try:
+        check_native_auth()
+        result["authenticated"] = True
+    except CodexError as e:
+        result["message"] = str(e)
+    return result
+
+
+@app.post("/api/setup/brain/login")
+async def start_codex_login():
+    global _codex_login_process
+    if _codex_login_process and _codex_login_process.poll() is None:
+        return {"success": True, "started": False, "message": "Codex login is already running."}
+    codex = shutil.which("codex")
+    if not codex:
+        return JSONResponse({"success": False, "message": "Codex CLI is not installed."}, status_code=400)
+    try:
+        _codex_login_process = subprocess.Popen(
+            [codex, "login"], stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+    except OSError as e:
+        return JSONResponse({"success": False, "message": f"Could not start Codex login: {e}"}, status_code=500)
+    return {"success": True, "started": True, "message": "Finish sign-in in the browser window opened by Codex."}
+
+
+@app.get("/api/setup/training")
+async def setup_training_status():
+    return dict(_setup_training_status)
+
+
+@app.post("/api/setup/training")
+async def setup_training(request: Request):
+    global _setup_training_task, _setup_training_status
+    try:
+        body = await request.json()
+        url = str(body.get("url", "")).strip()
+    except Exception:
+        url = ""
+    if not url.startswith(("http://", "https://")):
+        return JSONResponse({"success": False, "message": "Enter a valid product website URL."}, status_code=400)
+    if _setup_training_task and not _setup_training_task.done():
+        return {"success": True, "state": "running"}
+
+    async def run_training():
+        global _setup_training_status
+        _setup_training_status = {"state": "running", "message": "Learning your product website…"}
+        try:
+            from huntly.config import load_brain_config
+            from huntly.trainer import Trainer
+
+            trainer = Trainer(brain_config=load_brain_config())
+            await trainer.train(url, max_pages=100)
+            _setup_training_status = {"state": "complete", "message": "Product knowledge is ready."}
+        except Exception as e:
+            logger.exception("Setup product training failed")
+            _setup_training_status = {"state": "error", "message": str(e)}
+
+    _setup_training_task = asyncio.create_task(run_training())
+    return {"success": True, "state": "running"}
+
+
+def start_dashboard(host: str = "127.0.0.1", port: int = 5555, open_browser: bool = False):
     """Start the dashboard server."""
     import uvicorn
 
     print(f"\n  Huntly Dashboard running at http://{host}:{port}")
+    if open_browser:
+        print("  Setup opens at http://127.0.0.1:5555/setup")
+        threading.Timer(
+            0.8, lambda: webbrowser.open(f"http://{host}:{port}/setup")
+        ).start()
     print("  Press Ctrl+C to stop.\n")
     uvicorn.run(app, host=host, port=port, log_level="warning")
