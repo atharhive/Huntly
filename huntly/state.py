@@ -604,6 +604,16 @@ class StateManager:
                 row = await cursor.fetchone()
                 return self._company_from_row(row) if row else None
 
+    async def get_companies(self, limit: int = 100) -> list[Company]:
+        """Return recently discovered companies for review/demo workflows."""
+        async with self._connect() as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute(
+                "SELECT * FROM companies ORDER BY updated_at DESC LIMIT ?",
+                (int(limit),),
+            ) as cursor:
+                return [self._company_from_row(r) for r in await cursor.fetchall()]
+
     async def get_company_by_domain(self, domain: str) -> Company | None:
         async with self._connect() as db:
             db.row_factory = aiosqlite.Row

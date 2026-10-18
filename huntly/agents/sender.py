@@ -446,6 +446,14 @@ class Sender:
             if sent >= budget:
                 break
 
+            if item["kind"] == "demo":
+                await self.state.update_outbox_item(
+                    item["id"], status="cancelled",
+                    error="dashboard demo item; delivery disabled",
+                )
+                logger.info("Sender: skipped dashboard demo item %s.", item["id"])
+                continue
+
             prospect = await self.state.get_prospect(item["prospect_id"])
             if prospect is None:
                 await self.state.update_outbox_item(

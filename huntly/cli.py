@@ -642,6 +642,20 @@ def cmd_sending(args):
     asyncio.run(_run())
 
 
+def cmd_demo_email(args):
+    """Preview or send fictional self-addressed demo emails."""
+    from huntly.demo import main
+
+    main(send=args.send, count=args.count)
+
+
+def cmd_demo_drafts(args):
+    """Create non-deliverable drafts from real discovered companies."""
+    from huntly.demo_drafts import main
+
+    main(count=args.count)
+
+
 def main():
     from huntly.paths import PROJECT_ROOT
     project_root = str(PROJECT_ROOT)
@@ -772,6 +786,33 @@ def main():
     sub.add_argument("sending_action", nargs="?", default="status",
                      choices=["pause", "resume", "status"])
     sub.set_defaults(func=cmd_sending)
+
+    sub = subparsers.add_parser(
+        "demo-email",
+        help="Preview or send fictional demo emails to your configured Gmail address",
+    )
+    sub.add_argument(
+        "--send",
+        action="store_true",
+        help="Actually send the demo emails to persona.email; preview is the default",
+    )
+    sub.add_argument(
+        "--count",
+        type=int,
+        default=1,
+        help="Number of fictional demo emails to preview/send (1-3, default: 1)",
+    )
+    sub.set_defaults(func=cmd_demo_email)
+
+    sub = subparsers.add_parser(
+        "demo-drafts",
+        help="Create real-company drafts for the dashboard without delivery",
+    )
+    sub.add_argument(
+        "--count", type=int, default=5,
+        help="Number of discovered companies to include (1-20, default: 5)",
+    )
+    sub.set_defaults(func=cmd_demo_drafts)
 
     # huntly usage
     sub = subparsers.add_parser("usage", help="Show brain usage and quota (Claude or Codex)")
