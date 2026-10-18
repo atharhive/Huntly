@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/huntly-cover.svg" alt="Huntly — local intelligence and controlled outreach" width="100%">
+  <img src="./assets/huntly-cover.svg" alt="Huntly — local intelligence and controlled outreach" width="100%">
 </p>
 
 <p align="center">
