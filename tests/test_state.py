@@ -82,6 +82,24 @@ async def test_prospect_status_update(state):
 
 
 @pytest.mark.asyncio
+async def test_count_new_deliverable_prospects(state):
+    await state.add_prospect(Prospect(
+        first_name="Verified", last_name="Person", email="v@acme.com",
+        email_status="verified", title="Owner", status="new",
+    ))
+    await state.add_prospect(Prospect(
+        first_name="Unverified", last_name="Person", email="u@acme.com",
+        email_status="guess", title="Owner", status="new",
+    ))
+    await state.add_prospect(Prospect(
+        first_name="Queued", last_name="Person", email="q@acme.com",
+        email_status="verified", title="Owner", status="queued",
+    ))
+
+    assert await state.count_new_deliverable_prospects() == 1
+
+
+@pytest.mark.asyncio
 async def test_usage_tracking(state):
     """Usage increment should use UPSERT, not insert duplicate rows."""
     await state.increment_usage()

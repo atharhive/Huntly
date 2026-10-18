@@ -736,6 +736,18 @@ class StateManager:
                 rows = await cursor.fetchall()
                 return [self._prospect_from_row(r) for r in rows]
 
+    async def count_new_deliverable_prospects(self) -> int:
+        """Count new prospects whose addresses can safely enter drafting."""
+        async with self._connect() as db:
+            async with db.execute(
+                """SELECT COUNT(*) FROM prospects
+                   WHERE status = 'new'
+                     AND email != ''
+                     AND email_status IN ('verified', 'risky')"""
+            ) as cursor:
+                row = await cursor.fetchone()
+                return int(row[0] or 0) if row else 0
+
     async def update_prospect_status(self, prospect_id: str, status: str):
         async with self._connect() as db:
             await db.execute(
