@@ -40,6 +40,7 @@ QUIET_HOURS_POLL_SECONDS = 300
 
 # Phase-1 tasks that read replies; sending waits for all of them to succeed.
 REPLY_READERS = ("handle_replies", "read_replies")
+REAL_DRAFT_TARGET = 3
 
 
 def in_quiet_hours(config: HuntlyConfig) -> bool:
@@ -93,9 +94,22 @@ async def decide_next_action(
     new_prospects = prospects.get("new", 0) if isinstance(prospects, dict) else 0
     draft_campaigns = summary.get("draft_campaigns", 0) or 0
     open_conversations = summary.get("open_conversations", 0) or 0
+    real_outbox_items = await state.count_real_outbox_items()
 
     if open_conversations > 0:
         action, reason = "handle_replies", f"{open_conversations} open conversation(s) waiting"
+    elif real_outbox_items < REAL_DRAFT_TARGET and new_prospects > 0:
+        action, reason = (
+            "write_campaign",
+            f"{real_outbox_items}/{REAL_DRAFT_TARGET} real email(s) staged; "
+            f"{new_prospects} new prospect(s) ready",
+        )
+    elif real_outbox_items < REAL_DRAFT_TARGET:
+        action, reason = (
+            "prospect",
+            f"{real_outbox_items}/{REAL_DRAFT_TARGET} real email(s) staged; "
+            "pipeline needs verified contacts",
+        )
     elif draft_campaigns > 0:
         action, reason = "send_campaign", f"{draft_campaigns} draft campaign(s) ready to deploy"
     elif new_prospects > 0:

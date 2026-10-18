@@ -898,6 +898,36 @@ class StateManager:
                 row = await cursor.fetchone()
                 return dict(row) if row else None
 
+    async def count_real_outbox_items(self) -> int:
+        """Count non-demo items that are still part of the active send path."""
+        async with self._connect() as db:
+            async with db.execute(
+                """SELECT COUNT(*) FROM outbox
+                   WHERE kind != 'demo'
+                     AND status IN ('pending_review', 'approved', 'sent')"""
+            ) as cursor:
+                row = await cursor.fetchone()
+                return int(row[0] or 0) if row else 0
+
+    async def clear_demo_outbox(self) -> int:
+        """Cancel dashboard-only demo items and retire their demo prospects."""
+        async with self._connect() as db:
+            cursor = await db.execute(
+                """UPDATE outbox
+                   SET status = 'cancelled',
+                       error = 'dashboard demo removed',
+                       updated_at = CURRENT_TIMESTAMP
+                   WHERE kind = 'demo'
+                     AND status IN ('pending_review', 'approved')"""
+            )
+            await db.execute(
+                """UPDATE prospects
+                   SET status = 'opted_out', updated_at = CURRENT_TIMESTAMP
+                   WHERE source = 'demo' AND status NOT IN ('contacted', 'opted_out')"""
+            )
+            await db.commit()
+            return int(cursor.rowcount or 0)
+
     _OUTBOX_COLUMNS = frozenset({
         "status", "error", "message_id", "thread_ref", "sent_at",
         "subject", "body", "send_at", "provider",
