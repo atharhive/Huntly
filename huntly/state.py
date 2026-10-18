@@ -904,7 +904,7 @@ class StateManager:
             async with db.execute(
                 """SELECT COUNT(*) FROM outbox
                    WHERE kind != 'demo'
-                     AND status IN ('pending_review', 'approved', 'sent')"""
+                     AND status IN ('pending_review', 'approved')"""
             ) as cursor:
                 row = await cursor.fetchone()
                 return int(row[0] or 0) if row else 0

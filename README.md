@@ -113,6 +113,12 @@ huntly run
 Use the dashboard or `huntly outbox` to review pending messages when approval
 mode is enabled.
 
+With native Gmail/SMTP, the heartbeat keeps prospecting and drafting until
+three real, deliverable emails are staged (verified addresses by default).
+Those messages remain in `pending_review` until you approve them; after
+approval, the sender drains them on the normal heartbeat schedule and daily
+cap. Dashboard-only demo items are never part of this flow.
+
 ## Providers
 
 Email can be connected through the provider configured in `huntly.yaml`.
@@ -132,6 +138,8 @@ Huntly is designed to make outbound work reviewable:
 - quiet hours and daily limits are enforced before sending;
 - unverified guesses are not treated as deliverable addresses;
 - native providers stage outgoing messages in the outbox;
+- the heartbeat targets three real staged emails before settling into its
+  normal schedule;
 - replies and bounces can stop future messages;
 - discovery estimates spend before a provider is called;
 - local SQLite records the decisions and observations.
