@@ -98,6 +98,8 @@ async def decide_next_action(
 
     if open_conversations > 0:
         action, reason = "handle_replies", f"{open_conversations} open conversation(s) waiting"
+    elif draft_campaigns > 0:
+        action, reason = "send_campaign", f"{draft_campaigns} draft campaign(s) ready to deploy"
     elif real_outbox_items < REAL_DRAFT_TARGET and new_prospects > 0:
         action, reason = (
             "write_campaign",
@@ -110,8 +112,6 @@ async def decide_next_action(
             f"{real_outbox_items}/{REAL_DRAFT_TARGET} real email(s) staged; "
             "pipeline needs verified contacts",
         )
-    elif draft_campaigns > 0:
-        action, reason = "send_campaign", f"{draft_campaigns} draft campaign(s) ready to deploy"
     elif new_prospects > 0:
         action, reason = "write_campaign", f"{new_prospects} new prospect(s) with no drafts ready"
     elif new_prospects < 20:

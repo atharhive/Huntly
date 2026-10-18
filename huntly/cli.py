@@ -421,6 +421,11 @@ def cmd_outbox(args):
             await state.update_outbox_item(args.reject, status="rejected")
             print("\n  Rejected.\n")
             return
+        if getattr(args, "clear_demos", False):
+            n = await state.clear_demo_outbox()
+            print(f"\n  Cancelled {n} dashboard demo item(s).")
+            print("  Demo prospects were retired and will not enter real outreach.\n")
+            return
 
         paused = await state.get_setting("sending_paused")
         if paused:
@@ -743,6 +748,10 @@ def main():
     sub.add_argument("--approve", metavar="ID", default="", help="Approve one item")
     sub.add_argument("--approve-all", action="store_true", help="Approve all pending")
     sub.add_argument("--reject", metavar="ID", default="", help="Reject one item")
+    sub.add_argument(
+        "--clear-demos", action="store_true",
+        help="Cancel dashboard-only demo items and retire their demo prospects",
+    )
     sub.set_defaults(func=cmd_outbox)
 
     # huntly sending pause|resume|status
