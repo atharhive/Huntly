@@ -441,6 +441,33 @@ async def test_serper_adapter():
 
 
 @pytest.mark.asyncio
+async def test_serpapi_adapter():
+    provider = D.SerpApi()
+    payload = {"organic_results": [
+        {"title": "Kettleman Roofing",
+         "link": "https://www.kettlemanroofing.com/", "position": 2},
+        {"title": "Directory", "link": "https://example.com/listings",
+         "position": 5},
+    ]}
+    async with _client(lambda r: httpx.Response(200, json=payload)) as client:
+        out = await provider.fetch(
+            client, {"serpapi_api_key": "k"},
+            D.DiscoveryQuery(term="roofer", location="Denver"))
+    assert out[0].domain == "kettlemanroofing.com" and out[0].rank == 2
+    assert out[1].domain == "example.com"
+
+
+@pytest.mark.asyncio
+async def test_serpapi_error_is_actionable():
+    provider = D.SerpApi()
+    with pytest.raises(RuntimeError, match="account limit"):
+        async with _client(lambda r: httpx.Response(
+                200, json={"error": "account limit"})) as client:
+            await provider.fetch(client, {"serpapi_api_key": "k"},
+                                 D.DiscoveryQuery(term="roofer"))
+
+
+@pytest.mark.asyncio
 async def test_dataforseo_errors_surface_the_message_not_just_the_code():
     """A bare status code costs several wrong guesses; the body usually makes
     the problem obvious."""
@@ -469,6 +496,7 @@ def test_provider_menu_explains_cost_and_configuration():
     assert menu["dataforseo_listings"]["configured"] is False
     assert menu["dataforseo_listings"]["env_keys"] == [
         "DATAFORSEO_LOGIN", "DATAFORSEO_PASSWORD"]
+    assert menu["serpapi"]["configured"] is False
     for entry in menu.values():
         assert entry["blurb"] and entry["cost_note"] and entry["signup_url"]
 

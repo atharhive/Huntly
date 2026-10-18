@@ -450,6 +450,58 @@ class Serper(DiscoveryProvider):
         return out
 
 
+class SerpApi(DiscoveryProvider):
+    """Google results through SerpApi's standard search endpoint."""
+
+    key = "serpapi"
+    label = "SerpApi"
+    kind = "serp"
+    blurb = ("Google search with organic results, snippets, and rank positions "
+             "through SerpApi.")
+    cost_note = "Provider pricing varies by plan; Huntly estimates $0.01 per query"
+    free_tier = "Use the provider's currently advertised free allowance if available"
+    signup_url = "https://serpapi.com/"
+    env_keys = ("serpapi_api_key",)
+    caveat = ("Keep the --max-spend cap small. Huntly cannot see your remaining "
+              "SerpApi account credits.")
+    QUERY_COST = 0.01
+
+    def estimate(self, queries):
+        return self.QUERY_COST * len(queries)
+
+    async def fetch(self, client, env, query):
+        response = await client.get(
+            "https://serpapi.com/search.json",
+            params={
+                "engine": "google",
+                "q": query.keyword(),
+                "num": min(query.depth, 100),
+                "api_key": env["serpapi_api_key"],
+            },
+        )
+        response.raise_for_status()
+        data = response.json()
+        if data.get("error"):
+            raise RuntimeError(f"SerpApi: {data['error']}")
+
+        out = []
+        for item in data.get("organic_results") or []:
+            domain = normalize_domain(item.get("link") or "")
+            if not domain:
+                continue
+            out.append(Business(
+                name=item.get("title") or domain,
+                domain=domain,
+                website=item.get("link") or "",
+                location=query.location,
+                rank=item.get("position"),
+                has_website=True,
+                source_url=item.get("link") or "",
+                provider=self.key,
+            ))
+        return out
+
+
 class OpenStreetMap(DiscoveryProvider):
     """Genuinely free, no account, no key. Honest about what that costs you.
 
@@ -593,6 +645,7 @@ PROVIDERS: dict[str, DiscoveryProvider] = {
         DataForSEOListings(),
         DataForSEOSerp(),
         Serper(),
+        SerpApi(),
     )
 }
 
