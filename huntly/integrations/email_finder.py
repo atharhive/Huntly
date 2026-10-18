@@ -549,6 +549,29 @@ async def _verify_candidate(email: str, mx_type: str, env) -> tuple[Optional[str
     return None, catch_all_seen
 
 
+async def verify_known_email(email: str, env=None) -> EmailResult:
+    """Verify an address that was publicly published by its business.
+
+    Unlike ``find_email``, this never invents a local part or infers a
+    person's address. It only grades the exact address supplied by a
+    company's own website.
+    """
+    email = (email or "").strip().lower()
+    if "@" not in email:
+        return EmailResult(email="", status="invalid")
+    domain = _clean_domain(email.rsplit("@", 1)[1])
+    if not domain:
+        return EmailResult(email=email, status="invalid")
+    mx_host = await get_mx_host(domain)
+    if not mx_host:
+        return EmailResult(email=email, status="invalid", mx_type="none")
+    mx_type = classify_mx(mx_host)
+    status, catch_all = await _verify_candidate(email, mx_type, env)
+    if status is None:
+        status = "guess"
+    return EmailResult(email=email, status=status, mx_type=mx_type)
+
+
 # ── Top-level entry point ──
 
 async def find_email(

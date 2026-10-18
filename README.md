@@ -114,7 +114,7 @@ Use the dashboard or `huntly outbox` to review pending messages when approval
 mode is enabled.
 
 With native Gmail/SMTP, the heartbeat keeps prospecting and drafting until
-three real, deliverable emails are staged (verified addresses by default).
+ten real, deliverable emails are staged (verified addresses by default).
 Those messages remain in `pending_review` until you approve them; after
 approval, the sender drains them on the normal heartbeat schedule and daily
 cap. Dashboard-only demo items are never part of this flow.

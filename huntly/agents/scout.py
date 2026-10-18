@@ -59,6 +59,10 @@ BACKOFF_BASE = 1.5  # seconds; grows exponentially per attempt
 MAX_RESULTS_PER_QUERY = 20
 MAX_COMPANIES_PER_CYCLE = 10
 MAX_PROSPECTS_PER_CYCLE = 25
+PUBLIC_CONTACT_PATHS = (
+    "/", "/contact", "/contact-us", "/about", "/about-us", "/reach-us",
+    "/get-in-touch", "/support",
+)
 
 # Hunter domain-searches per heartbeat. The monthly budget itself is shared
 # with email-pattern lookups and set by HUNTER_MONTHLY_SEARCHES (see
@@ -1478,6 +1482,102 @@ Respond ONLY with the JSON array."""
 
             self._remember_prospect(prospect)
             contacts.append(prospect)
+
+        # Many small businesses publish a shared business inbox instead of a
+        # named owner. Use only addresses found on their own site; never
+        # synthesize a generic mailbox or a private personal address.
+        contacts.extend(
+            await self._public_mailbox_contacts(
+                company_id=company_id,
+                domain=domain,
+                company_name=company_name,
+                industry=industry,
+                signal_note=signal_note,
+                source=source,
+            )
+        )
+        return contacts
+
+    async def _public_mailbox_contacts(
+        self,
+        company_id: str,
+        domain: str,
+        company_name: str,
+        industry: str,
+        signal_note: str = "",
+        source: str = "public_business_email",
+    ) -> list[Prospect]:
+        """Find and verify exact business inboxes published on the site."""
+        from huntly.integrations.email_finder import verify_known_email
+
+        domain = domain.lower().strip()
+        role_locals = {
+            "admin", "billing", "careers", "contact", "hello", "help", "info",
+            "marketing", "media", "noreply", "office", "press", "sales",
+            "support", "team",
+        }
+        found: list[str] = []
+        for path in PUBLIC_CONTACT_PATHS:
+            base, _ = await self._resolve_base_url(domain, retries=1)
+            if not base:
+                break
+            resp = await self._fetch(
+                f"{base}{path}", timeout=SCRAPE_TIMEOUT, retries=1
+            )
+            if resp is None:
+                continue
+            soup = self._safe_soup(resp.text)
+            if soup is None:
+                continue
+            try:
+                hrefs = [
+                    self._attr_str(a.get("href"))
+                    for a in soup.find_all("a", href=True)
+                ]
+            except Exception:
+                hrefs = []
+            mailto = [
+                h[7:].split("?", 1)[0].strip().lower()
+                for h in hrefs
+                if h.lower().startswith("mailto:")
+            ]
+            inline = re.findall(
+                r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}",
+                resp.text[:50000],
+            )
+            for email in [*mailto, *inline]:
+                if email not in found:
+                    found.append(email)
+
+        contacts: list[Prospect] = []
+        for email in found:
+            local, _, email_domain = email.rpartition("@")
+            if email_domain != domain or local.lower() not in role_locals:
+                continue
+            result = await verify_known_email(email, env=self.env)
+            if result.status not in {"verified", "risky"}:
+                continue
+            prospect = Prospect(
+                first_name=company_name,
+                last_name="Team",
+                email=email,
+                email_status=result.status,
+                email_verified=result.status == "verified",
+                company=company_name,
+                company_id=company_id,
+                title="Business contact",
+                seniority="individual",
+                industry=industry,
+                source=source,
+                source_url=f"https://{domain}/contact",
+                personalization_notes=signal_note,
+            )
+            if await self._is_duplicate_prospect(prospect):
+                continue
+            self._remember_prospect(prospect)
+            contacts.append(prospect)
+            if len(contacts) >= 3:
+                break
         return contacts
 
     # ── Strategy 4: Job boards — companies hiring for signal roles ──

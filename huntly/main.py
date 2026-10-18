@@ -40,7 +40,7 @@ QUIET_HOURS_POLL_SECONDS = 300
 
 # Phase-1 tasks that read replies; sending waits for all of them to succeed.
 REPLY_READERS = ("handle_replies", "read_replies")
-REAL_DRAFT_TARGET = 3
+REAL_DRAFT_TARGET = 10
 
 
 def in_quiet_hours(config: HuntlyConfig) -> bool:
