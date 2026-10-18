@@ -1,0 +1,50 @@
+<svg width="1600" height="720" viewBox="0 0 1600 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1600" y2="720" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0E111A"/>
+      <stop offset="0.56" stop-color="#151D2C"/>
+      <stop offset="1" stop-color="#263A36"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1250 90) rotate(127) scale(610 510)">
+      <stop stop-color="#B4FF75" stop-opacity=".38"/>
+      <stop offset="1" stop-color="#B4FF75" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="44" height="44" patternUnits="userSpaceOnUse">
+      <path d="M44 0H0V44" stroke="#D9F5D0" stroke-opacity=".08"/>
+    </pattern>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="24" stdDeviation="24" flood-color="#030712" flood-opacity=".45"/>
+    </filter>
+  </defs>
+  <rect width="1600" height="720" rx="30" fill="url(#bg)"/>
+  <rect width="1600" height="720" rx="30" fill="url(#glow)"/>
+  <rect width="1600" height="720" rx="30" fill="url(#grid)"/>
+  <circle cx="1380" cy="120" r="190" stroke="#B4FF75" stroke-opacity=".2"/>
+  <circle cx="1380" cy="120" r="245" stroke="#B4FF75" stroke-opacity=".1"/>
+  <path d="M1040 578C1170 503 1178 351 1301 290C1400 241 1472 281 1600 173" stroke="#B4FF75" stroke-opacity=".5" stroke-width="2"/>
+  <path d="M1067 626C1200 557 1223 419 1337 366C1436 320 1504 348 1600 294" stroke="#B4FF75" stroke-opacity=".18" stroke-width="2"/>
+  <g filter="url(#shadow)">
+    <rect x="1040" y="142" width="376" height="294" rx="18" fill="#151C29" stroke="#7E967F" stroke-opacity=".42"/>
+    <rect x="1066" y="170" width="324" height="12" rx="6" fill="#405064"/>
+    <rect x="1066" y="208" width="218" height="52" rx="10" fill="#B4FF75"/>
+    <rect x="1090" y="224" width="128" height="10" rx="5" fill="#15201B"/>
+    <rect x="1066" y="282" width="324" height="1" fill="#354354"/>
+    <rect x="1066" y="308" width="228" height="10" rx="5" fill="#8495A7"/>
+    <rect x="1066" y="338" width="290" height="10" rx="5" fill="#536478"/>
+    <rect x="1066" y="368" width="188" height="10" rx="5" fill="#536478"/>
+    <circle cx="1352" cy="228" r="16" fill="#293B31" stroke="#B4FF75"/>
+    <path d="M1345 228L1350 233L1360 221" stroke="#B4FF75" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g fill="#F4F6F0">
+    <text x="108" y="122" font-family="Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="5">LOCAL INTELLIGENCE / CONTROLLED OUTREACH</text>
+    <text x="108" y="260" font-family="Arial, sans-serif" font-size="104" font-weight="700" letter-spacing="-5">Huntly</text>
+    <text x="112" y="320" font-family="Arial, sans-serif" font-size="28" fill="#B4FF75" letter-spacing="2">ALWAYS BE CLOSING — WITHOUT THE BLACK BOX</text>
+    <text x="112" y="407" font-family="Arial, sans-serif" font-size="21" fill="#A8B2C3">A local-first sales workflow for discovering, researching,</text>
+    <text x="112" y="440" font-family="Arial, sans-serif" font-size="21" fill="#A8B2C3">drafting, reviewing, and responding to outreach.</text>
+  </g>
+  <g transform="translate(112 535)">
+    <rect width="44" height="44" rx="12" fill="#B4FF75"/>
+    <text x="14" y="31" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#10131B">H</text>
+    <text x="62" y="29" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#F4F6F0" letter-spacing="2">DISCOVER → REVIEW → DELIVER</text>
+  </g>
+</svg>
