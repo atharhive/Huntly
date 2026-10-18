@@ -1313,12 +1313,13 @@ class StateManager:
     async def companies_needing_prospects(
         self, limit: int = 10, stale_days: int = 14
     ) -> list[dict]:
-        """Companies with a domain, zero prospects, and no recent check.
+        """Companies with a domain and no deliverable prospect.
 
         `huntly discover` (and other company-only sources) can add companies
         without ever finding a named contact at them. This is what lets a
-        prospecting pass go back and fill that in, instead of only ever
-        looking at companies it stumbles into fresh in the same cycle.
+        prospecting pass go back and fill that in. Companies may already have
+        scraped or guessed contacts; they still need another pass when none
+        has a verified or risky address.
 
         Ordered by ``prospects_checked_at`` (nulls first) rather than
         recency, so a backfill pass rotates through the whole backlog
@@ -1336,8 +1337,12 @@ class StateManager:
                      AND (c.prospects_checked_at IS NULL
                           OR c.prospects_checked_at < datetime('now', ?))
                    GROUP BY c.id
-                   HAVING COUNT(p.id) = 0
-                   ORDER BY c.prospects_checked_at IS NOT NULL, c.prospects_checked_at
+                HAVING SUM(
+                    CASE WHEN p.email != ''
+                               AND p.email_status IN ('verified', 'risky')
+                           THEN 1 ELSE 0 END
+                ) = 0
+                ORDER BY c.prospects_checked_at IS NOT NULL, c.prospects_checked_at
                    LIMIT ?""",
                 (f"-{int(stale_days)} days", int(limit)),
             ) as cursor:
