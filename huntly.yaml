@@ -1,65 +1,69 @@
 persona:
-  name: Huntly
-  company: Your Company
-  role: Business Development
-  email: huntly@yourcompany.com
-  linkedin: linkedin.com/in/huntly-yourcompany
+  name: Athar
+  company: Athar Freelance Web Development
+  role: Freelance Web Developer
+  email: itsyourilhan@gmail.com
+  linkedin: ""
   tone: professional, consultative, confident
+
 product:
-  name: Your Product
-  description: Describe what your product does and who it's for
-  pricing: Starting at $X/mo
+  name: Website and Web App Development
+  description: I help local businesses in Delhi NCR get more customers by building fast, mobile-friendly websites and practical web applications.
+  pricing: Custom quote after a free discovery call
   key_benefits:
-  - Benefit 1
-  - Benefit 2
-  - Benefit 3
+    - More enquiries from a clear mobile-friendly online presence
+    - Faster and easier customer journeys
+    - A website or web app tailored to the business workflow
   objection_responses:
-    too expensive: I understand budget is important. Most of our clients see ROI within
-      30 days...
-    already have a solution: "That makes sense. Curious \u2014 what's the one thing\
-      \ you wish it did better?"
-    not interested: No worries at all. Mind if I ask what your current approach looks
-      like?
+    too expensive: I understand. We can start with the smallest useful improvement and agree on a clear scope before any work begins.
+    already have a solution: That makes sense. What is the one part of the current website or workflow you wish worked better?
+    not interested: No problem. If you ever want a quick opinion on your website or customer journey, I am happy to share one.
   offer:
-    primary: ''
-    entry: ''
+    primary: Free 15-minute website and customer-journey review
+    entry: Free website improvement audit
     goal: book_call
-    booking_method: calendar_link
-    booking_url: ''
+    booking_method: suggest_times
+    booking_url: ""
     meeting_duration: 15 minutes
-    meeting_owner: ''
+    meeting_owner: Athar
+
 icp:
   industries:
-  - SaaS
-  - Marketing Agency
-  company_size: 10-200 employees
+    - Clinics
+    - Salons
+    - Restaurants
+    - Gyms
+    - Home Services
+  company_size: 1-50 employees
   titles:
-  - VP Marketing
-  - Head of Growth
-  - CMO
-  - Director of Marketing
+    - Founder
+    - Owner
+    - Managing Director
   geography:
-  - United States
+    - Delhi NCR
   hiring_signals: []
+
 channels:
   email:
     enabled: true
     provider: gmail
-    max_daily_sends: 50
+    max_daily_sends: 5
     require_approval: true
     send_to_risky: false
     max_bounce_rate: 0.05
   linkedin:
-    enabled: true
-    max_daily_connections: 20
-    max_daily_messages: 10
+    enabled: false
+    max_daily_connections: 0
+    max_daily_messages: 0
+
 usage:
   max_daily_claude_percent: 10.0
   heartbeat_interval_minutes: 15
   quiet_hours:
-    start: '22:00'
-    end: '10:00'
-    timezone: kolkata/india
+    start: "22:00"
+    end: "10:00"
+    timezone: Asia/Kolkata
+
 brain:
-  provider: codex
-  model: gpt-6-luna
+  provider: gemini
+  model: gemini-3.8-flash

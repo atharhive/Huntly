@@ -91,8 +91,9 @@ def _ask_brain_config() -> BrainConfig:
     _print_huntly("I think with an AI subscription you already pay for:")
     print("    claude — your Claude plan, via Claude Code (default)")
     print("    codex  — your ChatGPT plan, via the Codex CLI")
+    print("    gemini — Google Gemini API (free quota available)")
     while True:
-        provider = _ask("Which one? (claude/codex)", default="claude").lower()
+        provider = _ask("Which one? (claude/codex/gemini)", default="claude").lower()
         if provider == "codex":
             from huntly.codex import CodexError, require_supported_platform
             try:
@@ -100,9 +101,9 @@ def _ask_brain_config() -> BrainConfig:
             except CodexError as e:
                 print(f"    ({e})")
                 continue
-        if provider in ("claude", "codex"):
+        if provider in ("claude", "codex", "gemini"):
             break
-        print("    (type claude or codex)")
+        print("    (type claude, codex, or gemini)")
     if provider == "codex":
         from huntly.codex import SUGGESTED_MODEL
         print(f"    {SUGGESTED_MODEL} is the Codex model Huntly has verified as text-only")
@@ -110,6 +111,8 @@ def _ask_brain_config() -> BrainConfig:
     while True:
         if provider == "codex":
             model = _ask("Model", default=SUGGESTED_MODEL, required=False)
+        elif provider == "gemini":
+            model = _ask("Gemini model", default="gemini-3.8-flash", required=False)
         else:
             model = _ask("Model (leave blank for the default)", required=False)
         try:

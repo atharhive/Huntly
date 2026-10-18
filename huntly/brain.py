@@ -1,10 +1,8 @@
 """Brain — Huntly's thinking engine.
 
-Runs on the operator's Claude subscription (Claude Code headless, the
-default) or, when ``brain.provider: codex`` is configured, their ChatGPT
-subscription through an isolated Codex runtime (see huntly/codex.py). The
-provider is fixed per Brain; a failing provider never falls back to the
-other one.
+Runs on the operator's Claude subscription, ChatGPT/Codex subscription, or
+the Gemini API. The provider is fixed per Brain; a failing provider never
+falls back to another one.
 """
 
 import asyncio
@@ -13,6 +11,7 @@ import logging
 import re
 import time
 import uuid
+from time import monotonic
 from pathlib import Path
 
 from huntly.state import StateManager
@@ -39,7 +38,9 @@ _NON_RETRYABLE_PATTERNS = (
 )
 
 
-PROVIDER_LABELS = {"claude": "Claude", "codex": "Codex"}
+PROVIDER_LABELS = {"claude": "Claude", "codex": "Codex", "gemini": "Gemini"}
+GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta"
+DEFAULT_GEMINI_MODEL = "gemini-3.8-flash"
 
 # Settings key holding the brain's last health transition, for `huntly
 # status` and the dashboard: {"provider", "status": "ok"|"paused", "reason",
@@ -88,6 +89,7 @@ class Brain:
         self.provider = self.config.provider
         self.model = self.config.model
         self.codex = None
+        self.gemini_api_key = ""
         # Codex health (unused for Claude, whose behaviour is unchanged).
         self.unavailable = ""
         self._unavailable_at = 0.0
@@ -101,6 +103,10 @@ class Brain:
                 model=self.model, reasoning_effort=self.config.reasoning_effort
             )
             self.quota = CodexQuotaClient(self.codex)
+        elif self.provider == "gemini":
+            from huntly.config import load_env
+            self.gemini_api_key = load_env().gemini_api_key
+            self.quota = None
         else:
             # Lazy import avoids a cycle (quota -> usage -> state).
             from huntly.integrations.quota import QuotaClient
@@ -133,6 +139,10 @@ class Brain:
         PROVIDER_RECHECK_SECONDS, so a persistent problem doesn't start
         runtimes every heartbeat.
         """
+        if self.provider == "gemini":
+            if not self.gemini_api_key:
+                return "Gemini API key is missing. Set GEMINI_API_KEY in .env."
+            return await self._gemini_preflight()
         if self.provider != "codex":
             return ""
         from huntly.codex import CodexError
@@ -242,6 +252,11 @@ class Brain:
                 prompt, session_id=session_id, timeout=timeout,
                 max_retries=max_retries, agent=agent, task=task,
             )
+        if self.provider == "gemini":
+            return await self._think_gemini(
+                prompt, session_id=session_id, timeout=timeout,
+                max_retries=max_retries, agent=agent, task=task,
+            )
 
         # Windows caps a command line at ~32k chars and surfaces the overflow
         # as FileNotFoundError (WinError 206), so long prompts go via stdin.
@@ -326,6 +341,7 @@ class Brain:
                             "Run 'claude login' and restart Huntly."
                         )
                         return ""
+
                     continue  # retry transient failures
 
                 raw = stdout.decode(errors="replace").strip()
@@ -367,6 +383,90 @@ class Brain:
             f"Brain call failed after {max_retries + 1} attempts. "
             f"Last error: {str(last_error)[:200]}"
         )
+        return ""
+
+    async def _gemini_preflight(self) -> str:
+        """Check the configured Gemini key/model without generating content."""
+        import httpx
+
+        model = self.model or DEFAULT_GEMINI_MODEL
+        try:
+            async with httpx.AsyncClient(timeout=20) as client:
+                response = await client.get(
+                    f"{GEMINI_API_URL}/models/{model}",
+                    params={"key": self.gemini_api_key},
+                )
+        except httpx.HTTPError as e:
+            return f"Gemini preflight failed: {e}"
+        if response.status_code != 200:
+            return (
+                f"Gemini preflight failed ({response.status_code}): "
+                "check the API key and model."
+            )
+        return ""
+
+    async def _think_gemini(
+        self, prompt: str, session_id: str | None, timeout: float,
+        max_retries: int, agent: str, task: str,
+    ) -> str:
+        """Generate plain text through Gemini's REST API with no tools."""
+        import httpx
+
+        model = self.model or DEFAULT_GEMINI_MODEL
+        url = f"{GEMINI_API_URL}/models/{model}:generateContent"
+        last_error = ""
+        for attempt in range(max_retries + 1):
+            if attempt:
+                await asyncio.sleep(RETRY_BASE_DELAY * (2 ** (attempt - 1)))
+            started = monotonic()
+            try:
+                async with httpx.AsyncClient(timeout=timeout) as client:
+                    response = await client.post(
+                        url,
+                        params={"key": self.gemini_api_key},
+                        json={
+                            "contents": [{
+                                "role": "user",
+                                "parts": [{"text": prompt}],
+                            }],
+                            "generationConfig": {"responseMimeType": "text/plain"},
+                        },
+                    )
+                if response.status_code >= 400:
+                    try:
+                        detail = response.json().get("error", {}).get("message", "")
+                    except ValueError:
+                        detail = ""
+                    last_error = f"Gemini API {response.status_code}"
+                    if detail:
+                        last_error += f": {detail}"
+                    if response.status_code in (400, 401, 403):
+                        break
+                    continue
+                data = response.json()
+                text = "".join(
+                    part.get("text", "")
+                    for candidate in data.get("candidates", [])
+                    for part in candidate.get("content", {}).get("parts", [])
+                    if isinstance(part, dict)
+                ).strip()
+                if not text:
+                    last_error = "Gemini returned no text"
+                    continue
+                usage = data.get("usageMetadata", {})
+                await self.state.increment_usage(provider="gemini")
+                await self.state.record_usage_event(
+                    agent=agent, task=task or session_id or "",
+                    session_id=session_id or "", model=model,
+                    input_tokens=int(usage.get("promptTokenCount") or 0),
+                    output_tokens=int(usage.get("candidatesTokenCount") or 0),
+                    duration_ms=int((monotonic() - started) * 1000),
+                    source="gemini_rest", provider="gemini",
+                )
+                return text
+            except (httpx.HTTPError, ValueError) as e:
+                last_error = str(e)
+        logger.error("Gemini call failed after retries: %s", last_error[:200])
         return ""
 
     async def _think_codex(

@@ -153,7 +153,7 @@ class UsageConfig(BaseModel):
         return v
 
 
-BRAIN_PROVIDERS = ("claude", "codex")
+BRAIN_PROVIDERS = ("claude", "codex", "gemini")
 CODEX_REASONING_EFFORTS = ("minimal", "low", "medium", "high", "xhigh")
 
 # Model names are passed to a CLI, so they must look like a model name and
@@ -165,7 +165,8 @@ class BrainConfig(BaseModel):
     """Which subscription Huntly thinks with.
 
     ``claude`` (default) runs Claude Code headless on your Claude plan.
-    ``codex`` runs Codex on your ChatGPT plan. There is never an automatic
+    ``codex`` runs Codex on your ChatGPT plan. ``gemini`` uses the Gemini API.
+    There is never an automatic
     fallback between them, and an explicit ``model`` only affects Huntly —
     your own Claude Code / Codex settings are never read or changed.
     """
@@ -229,6 +230,7 @@ class EnvConfig(BaseModel):
     # Native mail providers (channels.email.provider: gmail | smtp)
     gmail_client_id: str = ""
     gmail_client_secret: str = ""
+    gemini_api_key: str = ""
     smtp_host: str = ""
     smtp_port: int = 587
     smtp_username: str = ""
@@ -339,6 +341,7 @@ def load_env() -> EnvConfig:
         zerobounce_api_key=os.getenv("ZEROBOUNCE_API_KEY", "").strip(),
         gmail_client_id=os.getenv("GMAIL_CLIENT_ID", "").strip(),
         gmail_client_secret=os.getenv("GMAIL_CLIENT_SECRET", "").strip(),
+        gemini_api_key=os.getenv("GEMINI_API_KEY", "").strip(),
         smtp_host=os.getenv("SMTP_HOST", "").strip(),
         smtp_port=int(os.getenv("SMTP_PORT", "587").strip() or 587),
         smtp_username=os.getenv("SMTP_USERNAME", "").strip(),

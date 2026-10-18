@@ -122,7 +122,8 @@ Instantly remains available for installations that already use it.
 The thinking provider is selected explicitly under `brain`. Huntly does not
 silently switch providers when the selected one is unavailable. Claude is the
 normal default; Codex can be selected when its supported CLI and login are
-available.
+available; Gemini can be selected with a `GEMINI_API_KEY` from Google AI
+Studio. Gemini calls use plain text only and do not receive tools.
 
 ## Guardrails
 

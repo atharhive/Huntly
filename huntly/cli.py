@@ -228,9 +228,13 @@ def cmd_status(args):
                     healthy = False
                     print(f"  Brain:                {label} NOT READY")
                     print(f"                        {problem}")
-                elif brain.provider == "codex":
-                    print(f"  Brain:                {label} ready (CLI, isolation, login, "
-                          "model and account checked; no prompt sent)")
+                elif brain.provider in ("codex", "gemini"):
+                    detail = (
+                        "CLI, isolation, login, model and account checked"
+                        if brain.provider == "codex"
+                        else "API key and model checked"
+                    )
+                    print(f"  Brain:                {label} ready ({detail}; no prompt sent)")
                 else:
                     print(f"  Brain:                {label} (not checked: Claude is checked "
                           "by its first call)")
@@ -675,7 +679,7 @@ def main():
         help="Max pages to crawl (default: 100)",
     )
     sub.add_argument(
-        "--provider", choices=["claude", "codex"], default=None,
+        "--provider", choices=["claude", "codex", "gemini"], default=None,
         help="Subscription to think with (default: the one in your config, else claude)",
     )
     sub.add_argument("--model", default=None, help="Model for this provider (default: provider default)")
